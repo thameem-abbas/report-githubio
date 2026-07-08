@@ -1,8 +1,0 @@
-{
-  "title": "Sample CI Report: vLLM Regression Tests",
-  "description": "Automated regression test results for vLLM 0.7.3 on A100-40GB (4-GPU)",
-  "tags": ["vllm", "regression", "a100", "ci"],
-  "date": "2026-07-07",
-  "author": "thameem-abbas",
-  "status": "final"
-}
