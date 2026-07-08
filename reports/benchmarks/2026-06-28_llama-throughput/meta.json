@@ -1,0 +1,8 @@
+{
+  "title": "Llama-3.1 Throughput Benchmark",
+  "description": "Throughput comparison of Llama-3.1-70B across A100 and H100 GPU configurations",
+  "tags": ["llama", "benchmark", "a100", "h100", "throughput"],
+  "date": "2026-06-28",
+  "author": "thameem-abbas",
+  "status": "draft"
+}

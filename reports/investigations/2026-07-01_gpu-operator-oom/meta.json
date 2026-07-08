@@ -1,0 +1,8 @@
+{
+  "title": "GPU Operator OOM Investigation",
+  "description": "Root cause analysis of GPU operator memory exhaustion on OCP 4.15 clusters",
+  "tags": ["gpu-operator", "oom", "openshift"],
+  "date": "2026-07-01",
+  "author": "thameem-abbas",
+  "status": "final"
+}
