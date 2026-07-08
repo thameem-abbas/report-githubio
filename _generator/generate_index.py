@@ -3,11 +3,53 @@
 
 import json
 import re
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
 REPORTS_DIR = Path("reports")
 OUTPUT_FILE = Path("index.html")
+
+
+def get_repo_url():
+    """Detect GitHub repo URL from git remote."""
+    result = subprocess.run(
+        ["git", "remote", "get-url", "origin"],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        return ""
+    url = result.stdout.strip()
+    # git@github.com:user/repo.git -> https://github.com/user/repo
+    m = re.match(r"git@github\.com:(.+?)(?:\.git)?$", url)
+    if m:
+        return f"https://github.com/{m.group(1)}"
+    # https://github.com/user/repo.git -> https://github.com/user/repo
+    m = re.match(r"https://github\.com/(.+?)(?:\.git)?$", url)
+    if m:
+        return f"https://github.com/{m.group(1)}"
+    return ""
+
+
+def get_version_info(path):
+    """Get version count and dates from git log for a path."""
+    result = subprocess.run(
+        ["git", "log", "--follow", "--format=%H %aI", "--", str(path)],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0 or not result.stdout.strip():
+        return {"versions": 1, "last_updated": "", "commits": []}
+    lines = [l for l in result.stdout.strip().split("\n") if l]
+    commits = []
+    for line in lines:
+        parts = line.split(" ", 1)
+        if len(parts) == 2:
+            commits.append({"sha": parts[0][:8], "date": parts[1][:10]})
+    return {
+        "versions": len(commits),
+        "last_updated": commits[0]["date"] if commits else "",
+        "commits": commits,
+    }
 
 
 def discover_reports():
@@ -60,6 +102,11 @@ def parse_report(report_dir, category):
     else:
         size_display = f"{size_bytes / 1_000_000:.1f} MB"
 
+    version_info = get_version_info(html_path)
+
+    prev_path = html_path.with_suffix(f".prev{html_path.suffix}")
+    has_prev = prev_path.exists()
+
     return {
         "title": meta.get("title", derived_title),
         "description": meta.get("description", ""),
@@ -69,6 +116,10 @@ def parse_report(report_dir, category):
         "status": meta.get("status", "final"),
         "category": category,
         "path": str(html_path),
+        "prev_path": str(prev_path) if has_prev else "",
+        "versions": version_info["versions"],
+        "last_updated": version_info["last_updated"],
+        "folder": str(report_dir),
         "size": size_display,
     }
 
@@ -78,12 +129,14 @@ def render_index(entries):
     categories = sorted(set(e["category"] for e in entries))
     all_tags = sorted(set(tag for e in entries for tag in e["tags"]))
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    repo_url = get_repo_url()
 
     html = INDEX_TEMPLATE.replace("__ENTRIES_JSON__", json.dumps(entries, indent=2))
     html = html.replace("__CATEGORIES_JSON__", json.dumps(categories))
     html = html.replace("__TAGS_JSON__", json.dumps(all_tags))
     html = html.replace("__GENERATED_AT__", generated_at)
     html = html.replace("__REPORT_COUNT__", str(len(entries)))
+    html = html.replace("__REPO_URL__", repo_url)
 
     OUTPUT_FILE.write_text(html)
     print(f"Generated {OUTPUT_FILE} with {len(entries)} reports")
@@ -142,6 +195,10 @@ header h1{font-size:1.5rem;font-weight:600}
 .card-desc{font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem}
 .card-bottom{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;font-size:0.75rem;color:var(--text-secondary)}
 .card-tag{padding:0.1rem 0.4rem;border-radius:4px;background:var(--pill-bg);color:var(--pill-text);font-size:0.7rem}
+.card-versions{display:flex;align-items:center;gap:0.5rem;font-size:0.7rem;margin-top:0.4rem;padding-top:0.4rem;border-top:1px solid var(--border)}
+.card-versions a{color:var(--accent);text-decoration:none}
+.card-versions a:hover{text-decoration:underline}
+.version-count{color:var(--text-secondary)}
 .card-size{margin-left:auto}
 footer{text-align:center;padding:1.5rem 0;font-size:0.75rem;color:var(--text-secondary);border-top:1px solid var(--border)}
 .empty-state{text-align:center;padding:3rem 1rem;color:var(--text-secondary)}
@@ -194,6 +251,7 @@ footer{text-align:center;padding:1.5rem 0;font-size:0.75rem;color:var(--text-sec
 const REPORTS = __ENTRIES_JSON__;
 const CATEGORIES = __CATEGORIES_JSON__;
 const ALL_TAGS = __TAGS_JSON__;
+const REPO_URL = "__REPO_URL__";
 
 let activeCategory = null;
 let activeTags = new Set();
@@ -314,8 +372,21 @@ function render() {
     return;
   }
 
-  container.innerHTML = filtered.map(r => `
-    <a class="card" href="${escHtml(r.path)}" target="_blank" rel="noopener">
+  container.innerHTML = filtered.map(r => {
+    const historyUrl = REPO_URL ? `${REPO_URL}/commits/main/${escHtml(r.folder)}` : "";
+    const versionHtml = r.versions > 1 ? `
+      <div class="card-versions">
+        <span class="version-count">${r.versions} versions</span>
+        ${r.prev_path ? `<a href="${escHtml(r.prev_path)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Previous version</a>` : ""}
+        ${historyUrl ? `<a href="${historyUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Full history</a>` : ""}
+      </div>` : (historyUrl ? `
+      <div class="card-versions">
+        <span class="version-count">1 version</span>
+        ${historyUrl ? `<a href="${historyUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">History</a>` : ""}
+      </div>` : "");
+
+    return `
+    <div class="card" onclick="window.open('${escHtml(r.path)}','_blank')" style="cursor:pointer">
       <div class="card-top">
         <div class="card-meta">
           <span class="category-badge">${escHtml(r.category)}</span>
@@ -330,8 +401,9 @@ function render() {
         ${r.tags.map(t => `<span class="card-tag">${escHtml(t)}</span>`).join("")}
         <span class="card-size">${escHtml(r.size)}</span>
       </div>
-    </a>
-  `).join("");
+      ${versionHtml}
+    </div>`;
+  }).join("");
 }
 
 function escHtml(s) {

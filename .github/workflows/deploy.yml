@@ -22,10 +22,15 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
+      - name: Extract previous report versions
+        run: python3 _generator/extract_prev_versions.py
 
       - name: Generate index.html
         run: python3 _generator/generate_index.py
