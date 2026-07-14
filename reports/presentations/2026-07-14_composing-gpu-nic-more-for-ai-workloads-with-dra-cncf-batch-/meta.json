@@ -1,0 +1,9 @@
+{
+  "title": "Composing GPU + NIC + more for AI Workloads with DRA — CNCF Batch Subproject",
+  "description": "Challenges-first presentation on cross-driver device composition via shadow claims for the CNCF Batch Subproject (BSI)",
+  "tags": ["dra", "gpu", "nic", "rdma", "cncf-batch", "composite-dra-driver"],
+  "date": "2026-07-14",
+  "author": "Thameem Abbas",
+  "status": "final",
+  "entry": "bsi-presentation.html"
+}
