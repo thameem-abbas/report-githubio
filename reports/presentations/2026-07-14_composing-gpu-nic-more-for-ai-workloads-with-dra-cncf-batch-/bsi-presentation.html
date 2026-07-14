@@ -760,17 +760,13 @@ compositions:
   <h2>Summary</h2>
   <div style="font-size:0.82em; text-align:left; max-width:800px; margin:20px auto;">
     <p style="margin-bottom:16px;">
-      <span class="grn">1.</span> &nbsp;Batch training jobs need multi-device allocation (GPU+NIC)<br>
-      &emsp;&ensp;with per-device config — today this requires 50-line claims<br>
-      &emsp;&ensp;or scheduler bypass
+      <span class="grn">1.</span> &nbsp;Distributed AI/ML workloads need multi-device allocation (GPU+NIC) with potential per-device config — today this requires per-rail templates or scheduler bypass
     </p>
     <p style="margin-bottom:16px;">
-      <span class="grn">2.</span> &nbsp;Composite DRA driver solves this within the <strong>existing DRA API</strong><br>
-      &emsp;&ensp;Config-driven, validated at <strong>318 Gb/s RDMA</strong> on real hardware
+      <span class="grn">2.</span> &nbsp;Composite DRA driver solves this within the <strong>existing DRA API</strong> — config-driven, validated on real hardware, RDMA at near line rate as expected
     </p>
     <p style="margin-bottom:16px;">
-      <span class="grn">3.</span> &nbsp;Scheduling authority stays with the scheduler —<br>
-      &emsp;&ensp;no bypass, no side-channel, no admission webhook making placement decisions
+      <span class="grn">3.</span> &nbsp;Scheduling authority stays with the scheduler — no bypass, no side-channel, no admission webhook making placement decisions
     </p>
   </div>
   <div style="font-size:0.65em; color:#8b949e; margin-top:30px;">
