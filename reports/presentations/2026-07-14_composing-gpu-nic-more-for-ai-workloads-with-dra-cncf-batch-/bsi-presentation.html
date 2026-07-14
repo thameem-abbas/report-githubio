@@ -128,7 +128,8 @@
   <h2>Multi-Device Allocation Is Manual</h2>
   <p style="font-size:0.78em; color:#c9d1d9; margin-bottom:6px;">
     GPU and NIC are managed by separate DRA drivers. Pairing them by topology requires<br>
-    per-rail ResourceClaimTemplates with hardcoded CEL selectors and routing config.
+    per-rail ResourceClaimTemplates with hardcoded CEL selectors and routing config.<br>
+    <span class="dim" style="font-size:0.88em;">Note: generic attributes like <code>pcieRoot</code> and <code>numaNode</code> are being standardized across drivers — we already use these for pairing.</span>
   </p>
   <p style="font-size:0.60em; color:#484f58; margin-bottom:8px;">
     Source: <a href="https://github.com/openshift-psap/ibmcloud-roce-dra-net-setup/tree/main/h100">openshift-psap/ibmcloud-roce-dra-net-setup</a>
